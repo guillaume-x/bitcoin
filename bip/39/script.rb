@@ -2,7 +2,7 @@
 
 require 'digest'
 
-THREE_BITS = ["000", "001", "010", "011", "100", "110", "111"]
+THREE_BITS = ["000", "001", "010", "011", "100", "101", "110", "111"]
 
 class String
   def first_four_letters
@@ -68,8 +68,9 @@ def checksum entropy_253
     cs_binary = ("0" * (8 - cs_binary.length)).concat(cs_binary)
     ##puts "binary from 2 digits from hash = #{cs_binary}"
     binary_seed = entropy + cs_binary
-    binary_seed_split = binary_seed.scan(/.{0,11}/)
-    ##puts "binary seed split = #{binary_seed_split}"
+    puts "binary_seed = |#{binary_seed}|"
+    binary_seed_split = binary_seed.scan(/[0-1]{11}/)
+    puts "binary seed split = #{binary_seed_split}"
     tab = Array.new
     for binary in binary_seed_split
       #puts "#{binary} = #{binary.to_i(2)}"
@@ -77,6 +78,8 @@ def checksum entropy_253
     end
     puts "tab = #{tab}" 
   end
+
+  return tab
 end
 
 
