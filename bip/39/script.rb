@@ -2,13 +2,88 @@
 
 require 'digest'
 
-THREE_BITS = ["000", "001", "010", "011", "100", "101", "110", "111"]
+
 
 class String
   def first_four_letters
     self[0,4]
   end
 end
+
+class Mnemonic
+
+  def initialize(dictionary, words)
+    @three_bits  = ["000", "001", "010", "011", "100", "101", "110", "111"]
+    @dictionary  = dictionary
+    @words       = words
+    @entropy_253 = entropy_253_compute()
+    @checksums    = checksums_compute()
+  end
+
+  def dictionary()
+    puts "#{@dictionary}"
+  end
+
+  def words()
+    puts "#{@words}"
+  end
+
+  def entropy()
+    puts "#{@entropy_253}"
+  end
+
+  def checksums()
+    puts "#{@checksums}"
+  end
+
+  private
+
+  def entropy_253_compute
+    entropy_253 = ""
+    for word in @words
+      index = @dictionary.index(word)
+      binary_index = index.to_s(2)
+      # add 0 * n if binary_index number if under 11
+      binary_index =  ("0" * (11 - binary_index.length)).concat(binary_index)
+      #puts " - #{word} index : #{index}"
+      #puts " - index in decimal format #{binary_index}"
+      entropy_253.concat(binary_index)
+    end
+
+    return entropy_253
+  end
+
+  def checksums_compute
+
+    for bits in @three_bits
+      entropy = @entropy_253 + bits
+      ##puts "3 bits = #{bits}"
+      ##puts "entropy = #{entropy}"
+      ##puts "entropy LENGTH = #{entropy.length}"
+      sha256 = Digest::SHA256.digest([entropy].pack("B*")) # hash of entropy (in raw binary)
+      ##puts "sha256 #{sha256.unpack("H*")}"
+      ##puts "Two digits from hash = #{sha256.unpack("H*")[0][0,2]}"
+      cs = sha256.unpack("H*")[0][0,2]
+      cs_binary = cs.hex.to_s(2)
+      cs_binary = ("0" * (8 - cs_binary.length)).concat(cs_binary)
+      ##puts "binary from 2 digits from hash = #{cs_binary}"
+      binary_seed = entropy + cs_binary
+      ###puts "binary_seed = |#{binary_seed}|"
+      binary_seed_split = binary_seed.scan(/[0-1]{11}/)
+      ###puts "binary seed split = #{binary_seed_split}"
+      tab = Array.new
+      for binary in binary_seed_split
+        #puts "#{binary} = #{binary.to_i(2)}"
+        tab.push(@dictionary[binary.to_i(2)])
+      end
+      ###puts "tab = #{tab}"
+    end
+
+    return tab
+  end
+
+end
+
 
 def check words
   # check the 23 words if given via commandline argument
@@ -31,67 +106,29 @@ def check words
       exit(3)
     end
   end
+
+  return dictionary
 end
 
-def entropy words
-  file = File.open("english.txt")
-  dictionary = file.readlines.map(&:chomp)
-
-  entropy_253 = ""
-  for word in ARGV
-    index = dictionary.index(word)
-    binary_index = index.to_s(2)
-    # add 0 * n if binary_index number if under 11
-    binary_index =  ("0" * (11 - binary_index.length)).concat(binary_index)
-    #puts " - #{word} index : #{index}"
-    #puts " - index in decimal format #{binary_index}"
-    entropy_253.concat(binary_index)
-  end
-
-  return entropy_253
-end
-
-def checksum entropy_253
-  file = File.open("english.txt")
-  dictionary = file.readlines.map(&:chomp)
-
-  for bits in THREE_BITS
-    entropy = entropy_253 + bits
-    ##puts "3 bits = #{bits}"
-    ##puts "entropy = #{entropy}"
-    ##puts "entropy LENGTH = #{entropy.length}"
-    sha256 = Digest::SHA256.digest([entropy].pack("B*")) # hash of entropy (in raw binary)
-    ##puts "sha256 #{sha256.unpack("H*")}"
-    ##puts "Two digits from hash = #{sha256.unpack("H*")[0][0,2]}"
-    cs = sha256.unpack("H*")[0][0,2]
-    cs_binary = cs.hex.to_s(2)
-    cs_binary = ("0" * (8 - cs_binary.length)).concat(cs_binary)
-    ##puts "binary from 2 digits from hash = #{cs_binary}"
-    binary_seed = entropy + cs_binary
-    puts "binary_seed = |#{binary_seed}|"
-    binary_seed_split = binary_seed.scan(/[0-1]{11}/)
-    puts "binary seed split = #{binary_seed_split}"
-    tab = Array.new
-    for binary in binary_seed_split
-      #puts "#{binary} = #{binary.to_i(2)}"
-      tab.push(dictionary[binary.to_i(2)])
-    end
-    puts "tab = #{tab}" 
-  end
-
-  return tab
-end
-
+#
+#  MAIN
+#
 
 def main words
-  check ARGV
-  entropy_253 = entropy words
-  puts "ENT 253 = #{entropy_253}"
-  checksum entropy_253
+  words = ARGV
+  dictionary = check words
+  seed = Mnemonic.new(dictionary = dictionary, words = words)
+  seed.words()
+  seed.entropy()
+  seed.checksums()
 end
 
 main ARGV
 exit
+
+
+
+
 
 
 
