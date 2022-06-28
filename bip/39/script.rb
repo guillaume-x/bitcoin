@@ -2,8 +2,6 @@
 
 require 'digest'
 
-
-
 class String
   def first_four_letters
     self[0,4]
@@ -17,7 +15,8 @@ class Mnemonic
     @dictionary  = dictionary
     @words       = words
     @entropy_253 = entropy_253_compute()
-    @checksums    = checksums_compute()
+    @checksums   = checksums_compute()
+    @last_words  = last_words_compute()
   end
 
   def dictionary()
@@ -33,10 +32,24 @@ class Mnemonic
   end
 
   def checksums()
-    puts "#{@checksums}"
+    #puts "#{@checksums}"
+    @checksums.each do |three_bits, h|
+      puts "-- With the three bits : #{three_bits} -- "
+      h.each_pair {|key, value| puts " - #{key}: #{value}" }
+    end
+  end
+
+  def last_words()
+    puts "#{@last_words}"
   end
 
   private
+
+  def last_words_compute
+    words = []
+    @checksums.each_pair { |three_bits, h|  words.push(h[:last_word]) }
+    return words
+  end
 
   def entropy_253_compute
     entropy_253 = ""
@@ -55,7 +68,9 @@ class Mnemonic
 
   def checksums_compute
 
+    h_all = {}
     for bits in @three_bits
+      h = {}
       entropy = @entropy_253 + bits
       ##puts "3 bits = #{bits}"
       ##puts "entropy = #{entropy}"
@@ -76,10 +91,20 @@ class Mnemonic
         #puts "#{binary} = #{binary.to_i(2)}"
         tab.push(@dictionary[binary.to_i(2)])
       end
-      ###puts "tab = #{tab}"
+
+      h[:entropy]           = entropy
+      h[:sha256]            = sha256.unpack("H*")
+      h[:cs]                = cs
+      h[:cs_binary]         = cs_binary
+      h[:binary_seed]       = binary_seed
+      h[:binary_seed_split] = binary_seed_split
+      h[:words]             = tab
+      h[:last_word]         = tab[-1]
+
+      h_all[":#{bits}"] = h
     end
 
-    return tab
+    return h_all
   end
 
 end
@@ -119,8 +144,12 @@ def main words
   dictionary = check words
   seed = Mnemonic.new(dictionary = dictionary, words = words)
   seed.words()
+  puts "entropy : "
   seed.entropy()
+  puts "checksums : "
   seed.checksums()
+  puts "--- last words list ---"
+  seed.last_words()
 end
 
 main ARGV
