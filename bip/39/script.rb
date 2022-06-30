@@ -32,7 +32,7 @@ class Mnemonic
   end
 
   def checksums()
-    #puts "#{@checksums}"
+    puts "-------------------------------"
     @checksums.each do |three_bits, h|
       puts "-- With the three bits : #{three_bits} -- "
       h.each_pair {|key, value| puts " - #{key}: #{value}" }
@@ -47,7 +47,7 @@ class Mnemonic
 
   def last_words_compute
     words = []
-    @checksums.each_pair { |three_bits, h|  words.push(h[:last_word]) }
+    @checksums.each_pair { |three_bits, h|  words.push(h[:Last_Word]) }
     return words
   end
 
@@ -86,22 +86,21 @@ class Mnemonic
       ###puts "binary_seed = |#{binary_seed}|"
       binary_seed_split = binary_seed.scan(/[0-1]{11}/)
       ###puts "binary seed split = #{binary_seed_split}"
-      tab = Array.new
-      for binary in binary_seed_split
-        #puts "#{binary} = #{binary.to_i(2)}"
-        tab.push(@dictionary[binary.to_i(2)])
-      end
 
-      h[:entropy]           = entropy
-      h[:sha256]            = sha256.unpack("H*")
-      h[:cs]                = cs
-      h[:cs_binary]         = cs_binary
-      h[:binary_seed]       = binary_seed
-      h[:binary_seed_split] = binary_seed_split
-      h[:words]             = tab
-      h[:last_word]         = tab[-1]
+      word_indexes = binary_seed_split.clone
+      word_list = binary_seed_split.clone
 
-      h_all[":#{bits}"] = h
+      h[:Raw_Binary]        = entropy.scan(/[0-1]{11}/).join(" ") + " #{bits}"
+      #h[:sha256]            = sha256.unpack("H*")
+      #h[:cs]                = cs
+      h[:Binary_checksum]   = cs_binary
+      #h[:binary_seed]       = binary_seed
+      #h[:binary_seed_split] = binary_seed_split
+      h[:Word_Indexes]      = word_indexes.each_index { |index| word_indexes[index] = word_indexes[index].to_i(2) }
+      h[:Words_List]        = word_list.each_index { |index| word_list[index] = @dictionary[word_indexes[index]] }
+      h[:Last_Word]         = h[:Words_List][-1]
+
+      h_all["#{bits}"] = h
     end
 
     return h_all
