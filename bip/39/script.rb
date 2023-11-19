@@ -142,98 +142,13 @@ def main words
   words = ARGV
   dictionary = check words
   seed = Mnemonic.new(dictionary = dictionary, words = words)
-  seed.words()
-  puts "entropy : "
-  seed.entropy()
-  puts "checksums : "
-  seed.checksums()
-  puts "--- last words list ---"
+  #seed.words()
+  #puts "entropy : "
+  #seed.entropy()
+  #puts "checksums : "
+  #seed.checksums()
+  #puts "--- last words list ---"
   seed.last_words()
 end
 
 main ARGV
-exit
-
-
-
-
-
-
-
-
-
-
-
-# print word list given
-puts "Word list : "
-for word in ARGV
-  puts " - #{word}"
-end
-
-# print first 4 characters from each word
-puts "Word list : "
-for word in ARGV
-  puts " - #{word.first_four_letters}"
-end
-
-# compute each word with :
-# - get index number of the words from the dictionary
-# - compute each index number into binary
-# - make the entropy = concat(index number in binary format)
-ENTROPY = ""
-
-puts "entropy = #{ENTROPY}"
-puts "entropy LENGTH = #{ENTROPY.length}"
-
-for bits in three_bits
-  puts "-------------------------------------"
-  entropy = ENTROPY
-  entropy = entropy + bits
-  #entropy = entropy
-  puts "3 bits = #{bits}"
-  puts "entropy = #{entropy}"
-  puts "entropy LENGTH = #{entropy.length}"
-  sha256 = Digest::SHA256.digest([entropy].pack("B*")) # hash of entropy (in raw binary)
-  puts "sha256 #{sha256.unpack("H*")}"
-  puts "Two digits from hash = #{sha256.unpack("H*")[0][0,2]}"
-  cs = sha256.unpack("H*")[0][0,2]
-  cs_binary = cs.hex.to_s(2)
-  cs_binary = ("0" * (8 - cs_binary.length)).concat(cs_binary)
-  puts "binary from 2 digits from hash = #{cs_binary}"
-  binary_seed = entropy + cs_binary
-  binary_seed_split = binary_seed.scan(/.{0,11}/)
-  puts "binary seed split = #{binary_seed_split}"
-  tab = Array.new
-  for binary in binary_seed_split
-    puts "#{binary} = #{binary.to_i(2)}"
-    tab.push(dictionary[binary.to_i(2)])
-  end
-  puts "tab = #{tab}" 
-end
-
-
-exit
-
-entropy = "1011110111001011101101000001010001011001011010100101101111011110101000110101100011111000000011111010111011100110010100110101001101100110101101001001010011001111100101010110000111110101001110111101110011110010110001011001011111011001001010010110111111100111"
-
-# 1. Create checksum
-require 'digest'
-size = entropy.length / 32 # number of bits to take from hash of entropy (1 bit checksum for every 32 bits entropy)
-sha256 = Digest::SHA256.digest([entropy].pack("B*")) # hash of entropy (in raw binary)
-checksum = sha256.unpack("B*").join[0..size-1] # get desired number of bits
-#check = Digest::SHA256.hexdigest([entropy].pack("B*"))
-entropy_pack = [entropy].pack("B*")
-sha256hex = sha256.unpack("H*")
-puts "entropy.pack : #{entropy_pack}"
-puts "sha256hex: #{sha256hex}"
-puts "checksum: #{checksum}"
-
-# 2. Combine
-full = entropy + checksum
-puts "combined: #{full}"
-
-# 3. Split in to strings of of 11 bits
-pieces = full.scan(/.{11}/)
-puts "--------------"
-puts pieces
-
